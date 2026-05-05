@@ -42,12 +42,24 @@ ensureBucket().catch(console.error);
 // POST /api/admin/upload-image
 app.post('/api/admin/upload-image', auth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided' });
-  const ext = req.file.originalname.split('.').pop();
-  const fileName = `${req.admin.id}/${Date.now()}.${ext}`;
+
+  // Derive extension from mimetype — reliable even if filename is missing/wrong
+  const mimeToExt = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/heic': 'heic' };
+  const ext = mimeToExt[req.file.mimetype] || 'jpg';
+
+  // Flat path — no subdirectory, no special chars
+  const adminId = req.admin.id.replace(/-/g, '');
+  const fileName = `${adminId}_${Date.now()}.${ext}`;
+
   const { error } = await supabase.storage
     .from('event-images')
     .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
-  if (error) { console.error('Upload error:', error); return res.status(500).json({ error: 'Image upload failed: ' + error.message }); }
+
+  if (error) {
+    console.error('Upload error:', error);
+    return res.status(500).json({ error: 'Image upload failed: ' + error.message });
+  }
+
   const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(fileName);
   res.json({ url: publicUrl });
 });
