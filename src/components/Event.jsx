@@ -1,6 +1,5 @@
 import "../App.css"
 import HeaderImg from '../imgs/event_header.jpg'
-import concertIMG1 from '../imgs/matt_rife.webp'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { IoArrowBack } from 'react-icons/io5'
@@ -28,7 +27,7 @@ const Event = () => {
         const data = await fetchAdminEvents()
         const withImages = data.map(e => ({
           ...e,
-          IMG: e.image_url || e.IMG || concertIMG1
+          IMG: e.image_url || null
         }))
         setEvents(withImages)
         setTotalTickets(withImages.length)

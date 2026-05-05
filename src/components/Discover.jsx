@@ -8,7 +8,6 @@ import img7 from '../imgs/home_image7.PNG'
 import img8 from '../imgs/home_image8.PNG'
 import img9 from '../imgs/home_image9.PNG'
 import img10 from '../imgs/home_image10.PNG'
-import concertIMG1 from '../imgs/matt_rife.webp'
 import { useState, useEffect } from 'react'
 import { fetchAllEvents } from '../api'
 import '../App.css'
@@ -54,7 +53,7 @@ const Homepage = () => {
           <div className="admin-events-grid">
             {events.map((event, index) => (
               <div key={event.id || index} className="admin-event-card">
-                <img src={event.IMG || concertIMG1} alt={event.name} className="admin-event-image" />
+                <img src={event.IMG || event.image_url || ''} alt={event.name} className="admin-event-image" />
                 <div className="admin-event-info">
                   <h3 className="admin-event-name">{event.name}</h3>
                   <p className="admin-event-venue">{event.stadium}</p>
