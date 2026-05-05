@@ -6,10 +6,9 @@ import { createPortal } from 'react-dom'
 import { IoArrowBack } from 'react-icons/io5'
 import { BsThreeDotsVertical, BsUpcScan, BsFiles } from 'react-icons/bs'
 import { TbArrowUpRight, TbRefresh } from 'react-icons/tb'
-import { fetchAllEvents } from '../api'
+import { fetchAdminEvents, isLoggedIn } from '../api'
 
 const Event = () => {
-
   const [Events, setEvents] = useState([])
   const [display, setdisplay] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -20,26 +19,33 @@ const Event = () => {
 
   useEffect(() => {
     const loadEvents = async () => {
-      try {
-        const data = await fetchAllEvents();
-        const withImages = data.map(e => ({ ...e, IMG: e.IMG || concertIMG1 }));
-        setEvents(withImages);
-        setTotalTickets(withImages.length);
-      } catch {
-        // backend not reachable — show nothing
+      if (!isLoggedIn()) {
+        setEvents([])
+        setTotalTickets(0)
+        return
       }
-    };
+      try {
+        const data = await fetchAdminEvents()
+        const withImages = data.map(e => ({
+          ...e,
+          IMG: e.image_url || e.IMG || concertIMG1
+        }))
+        setEvents(withImages)
+        setTotalTickets(withImages.length)
+      } catch {
+        setEvents([])
+      }
+    }
 
-    loadEvents();
+    loadEvents()
 
-    // Re-sync when admin makes changes in another tab
-    window.addEventListener('storage', loadEvents);
-    window.addEventListener('adminEventsUpdated', loadEvents);
+    window.addEventListener('storage', loadEvents)
+    window.addEventListener('adminEventsUpdated', loadEvents)
     return () => {
-      window.removeEventListener('storage', loadEvents);
-      window.removeEventListener('adminEventsUpdated', loadEvents);
-    };
-  }, []);
+      window.removeEventListener('storage', loadEvents)
+      window.removeEventListener('adminEventsUpdated', loadEvents)
+    }
+  }, [])
 
   const handleEventClick = (event) => {
     setSelectedEvent(event)
@@ -61,31 +67,48 @@ const Event = () => {
             onClick={() => setActiveView('past')}
           >PAST ({totalpastTickets})</p>
         </div>
-        <div className="tickets-cards">
-          {Events.map((event, key) => (
-            <div key={key} onClick={() => handleEventClick(event)}>
-              <img src={event.IMG} alt={`${key} IMG`} />
-              <div className="card-items">
-                <div className="timedetails">
-                  <p>{event.day}</p> •
-                  <p>{event.date}</p> •
-                  <p>{event.time}</p>
-                </div>
-                <div className="eventdetails">
-                  <p>{event.name}</p>
-                  <hr />
-                  <p>{event.stadium} - {event.state}, {event.city}</p>
+
+        {!isLoggedIn() ? (
+          <div className="tickets-locked">
+            <div className="tickets-locked-inner">
+              <span className="tickets-locked-icon">🎟️</span>
+              <p className="tickets-locked-title">Your tickets will appear here</p>
+              <p className="tickets-locked-sub">Sign in to your admin account to view your events and tickets.</p>
+            </div>
+          </div>
+        ) : Events.length === 0 ? (
+          <div className="tickets-locked">
+            <div className="tickets-locked-inner">
+              <span className="tickets-locked-icon">📭</span>
+              <p className="tickets-locked-title">No events yet</p>
+              <p className="tickets-locked-sub">Events you create in your admin dashboard will show here.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="tickets-cards">
+            {Events.map((event, key) => (
+              <div key={key} onClick={() => handleEventClick(event)}>
+                <img src={event.IMG} alt={`${key} IMG`} />
+                <div className="card-items">
+                  <div className="timedetails">
+                    <p>{event.day}</p> •
+                    <p>{event.date}</p> •
+                    <p>{event.time}</p>
+                  </div>
+                  <div className="eventdetails">
+                    <p>{event.name}</p>
+                    <hr />
+                    <p>{event.stadium} - {event.state}, {event.city}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {display && selectedEvent && createPortal(
         <div className="ticketpopup">
-
-          {/* ── Hero image with overlaid back + help ── */}
           <div className="tp-hero-wrapper">
             <img src={selectedEvent.IMG} alt={selectedEvent.name} className="tp-hero-img" />
             <div className="tp-hero-overlay">
@@ -96,7 +119,6 @@ const Event = () => {
             </div>
           </div>
 
-          {/* ── Dark event info section ── */}
           <div className="tp-event-info">
             <p className="tp-datetime">
               {selectedEvent.day} &bull; {selectedEvent.date} &bull; {selectedEvent.time}
@@ -113,32 +135,23 @@ const Event = () => {
             </div>
           </div>
 
-          {/* ── Blue View Tickets button ── */}
           <button className="tp-view-tickets-btn">
             <BsUpcScan size={17} />
             <span>View Tickets</span>
           </button>
 
-          {/* ── Tabs ── */}
           <div className="tp-tabs">
             <button
               className={`tp-tab ${activeTab === 'tickets' ? 'tp-tab-active' : ''}`}
               onClick={() => setActiveTab('tickets')}
-            >
-              Tickets
-            </button>
+            >Tickets</button>
             <button
               className={`tp-tab ${activeTab === 'extras' ? 'tp-tab-active' : ''}`}
               onClick={() => setActiveTab('extras')}
-            >
-              Extras
-            </button>
+            >Extras</button>
           </div>
 
-          {/* ── Scrollable content ── */}
           <div className="tp-content">
-
-            {/* Order row */}
             <div className="tp-order-row">
               <div>
                 <p className="tp-order-num">Order #{selectedEvent.orderNum}</p>
@@ -147,7 +160,6 @@ const Event = () => {
               <BsThreeDotsVertical size={17} color="#000" />
             </div>
 
-            {/* Ticket cards */}
             {selectedEvent.tickets.map((ticket, idx) => (
               <div key={idx} className="tp-ticket-card">
                 <p className="tp-ticket-label">TICKET</p>
@@ -167,10 +179,8 @@ const Event = () => {
                 </div>
               </div>
             ))}
-
           </div>
 
-          {/* ── Bottom Transfer / Sell bar ── */}
           <div className="tp-bottom-bar">
             <div className="tp-bottom-actions">
               <button className="tp-action-btn">
@@ -183,7 +193,6 @@ const Event = () => {
               </button>
             </div>
           </div>
-
         </div>,
         document.getElementById('popup-container')
       )}

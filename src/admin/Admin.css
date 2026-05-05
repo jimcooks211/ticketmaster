@@ -578,3 +578,144 @@
     padding: 20px;
   }
 }
+/* ── Image Upload ──────────────────────────────────────────────────────────── */
+
+.image-upload-area {
+  width: 100%;
+}
+
+.image-dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.image-dropzone:hover {
+  border-color: #667eea;
+  background: #f5f3ff;
+}
+
+.dropzone-title {
+  color: #555;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dropzone-sub {
+  color: #aaa;
+  font-size: 12px;
+  margin: 0;
+}
+
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.image-preview-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.change-image-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.change-image-btn:hover { background: #bbdefb; }
+
+.remove-image-btn {
+  padding: 8px 16px;
+  background: #ffebee;
+  color: #c62828;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.remove-image-btn:hover { background: #ffcdd2; }
+
+.upload-status {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 500;
+  margin-right: auto;
+  align-self: center;
+}
+
+/* ── Event card thumbnail ──────────────────────────────────────────────────── */
+
+.event-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+  display: block;
+}
+
+/* ── Tickets locked (not logged in) ───────────────────────────────────────── */
+
+.tickets-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+
+.tickets-locked-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.tickets-locked-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.tickets-locked-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.tickets-locked-sub {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+  max-width: 280px;
+}

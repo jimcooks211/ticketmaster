@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoAdd, IoLogOut, IoTrash, IoPencil, IoPerson } from 'react-icons/io5';
+import { IoAdd, IoLogOut, IoTrash, IoPencil, IoPerson, IoImage } from 'react-icons/io5';
 import { fetchAdminEvents, createEvent, updateEvent, deleteEvent, logout, getAdminInfo } from '../api';
+import { uploadEventImage } from '../supabase';
 import './Admin.css';
 
 const AdminDashboard = () => {
@@ -11,12 +12,9 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
   const admin = getAdminInfo();
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  useEffect(() => { loadEvents(); }, []);
 
   const loadEvents = async () => {
     setLoading(true);
@@ -31,10 +29,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/admin');
-  };
+  const handleLogout = () => { logout(); navigate('/admin'); };
 
   const handleDelete = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event?')) return;
@@ -46,10 +41,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleEdit = (event) => {
-    setEditingEvent(event);
-    setShowForm(true);
-  };
+  const handleEdit = (event) => { setEditingEvent(event); setShowForm(true); };
 
   const handleFormSubmit = async (formData) => {
     try {
@@ -67,10 +59,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingEvent(null);
-  };
+  const handleFormCancel = () => { setShowForm(false); setEditingEvent(null); };
 
   return (
     <div className="admin-dashboard">
@@ -85,8 +74,7 @@ const AdminDashboard = () => {
             <span>{admin.username}</span>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
-            <IoLogOut size={20} />
-            Logout
+            <IoLogOut size={20} /> Logout
           </button>
         </div>
       </div>
@@ -96,8 +84,7 @@ const AdminDashboard = () => {
           <div className="section-header">
             <h2>My Events ({events.length})</h2>
             <button className="add-event-btn" onClick={() => setShowForm(true)}>
-              <IoAdd size={20} />
-              Create Event
+              <IoAdd size={20} /> Create Event
             </button>
           </div>
 
@@ -124,6 +111,9 @@ const AdminDashboard = () => {
             ) : (
               events.map(event => (
                 <div key={event.id} className="event-card">
+                  {event.image_url && (
+                    <img src={event.image_url} alt={event.name} className="event-card-img" />
+                  )}
                   <div className="event-card-header">
                     <h3>{event.name}</h3>
                     <div className="event-actions">
@@ -157,13 +147,40 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
   const [formData, setFormData] = useState(initialData || {
     name: '', state: '', city: '', stadium: '',
     time: '', date: '', day: '', orderNum: '',
-    tickets: [{ section: '', row: '', seat: '' }]
+    tickets: [{ section: '', row: '', seat: '' }],
+    image_url: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(initialData?.image_url || null);
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be under 10MB.');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, image_url: '' });
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleTicketChange = (index, field, value) => {
@@ -176,18 +193,28 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
     setFormData({ ...formData, tickets: [...formData.tickets, { section: '', row: '', seat: '' }] });
 
   const removeTicket = (index) => {
-    if (formData.tickets.length > 1) {
+    if (formData.tickets.length > 1)
       setFormData({ ...formData, tickets: formData.tickets.filter((_, i) => i !== index) });
-    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSubmit(formData);
+      let imageUrl = formData.image_url || '';
+
+      if (imageFile) {
+        setUploadProgress('Uploading image...');
+        imageUrl = await uploadEventImage(imageFile);
+        setUploadProgress('');
+      }
+
+      await onSubmit({ ...formData, image_url: imageUrl });
+    } catch (err) {
+      alert('Failed to save: ' + err.message);
     } finally {
       setSaving(false);
+      setUploadProgress('');
     }
   };
 
@@ -200,16 +227,51 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="event-form">
+
+          {/* ── Image Upload ── */}
+          <div className="form-section">
+            <h3>Event Image</h3>
+            <div className="image-upload-area">
+              {imagePreview ? (
+                <div className="image-preview-container">
+                  <img src={imagePreview} alt="Preview" className="image-preview" />
+                  <div className="image-preview-actions">
+                    <button type="button" className="change-image-btn"
+                      onClick={() => fileInputRef.current?.click()}>
+                      <IoImage size={16} /> Change Image
+                    </button>
+                    <button type="button" className="remove-image-btn"
+                      onClick={handleRemoveImage}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="image-dropzone" onClick={() => fileInputRef.current?.click()}>
+                  <IoImage size={40} color="#ccc" />
+                  <p className="dropzone-title">Click to upload event image</p>
+                  <p className="dropzone-sub">PNG, JPG, WEBP up to 10MB — stored at full quality</p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+
+          {/* ── Event Info ── */}
           <div className="form-section">
             <h3>Event Information</h3>
-
             <div className="form-group">
               <label>Event Name *</label>
               <input type="text" name="name" value={formData.name}
                 onChange={handleInputChange} required
                 placeholder="e.g., MATT RIFE: STAY GOLDEN WORLD TOUR" />
             </div>
-
             <div className="form-row">
               <div className="form-group">
                 <label>State *</label>
@@ -222,13 +284,11 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
                   onChange={handleInputChange} required placeholder="e.g., Charlotte" />
               </div>
             </div>
-
             <div className="form-group">
-              <label>Stadium/Venue *</label>
+              <label>Stadium / Venue *</label>
               <input type="text" name="stadium" value={formData.stadium}
                 onChange={handleInputChange} required placeholder="e.g., Spectrum Center" />
             </div>
-
             <div className="form-row">
               <div className="form-group">
                 <label>Day *</label>
@@ -252,6 +312,7 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
             </div>
           </div>
 
+          {/* ── Order Info ── */}
           <div className="form-section">
             <h3>Order Information</h3>
             <div className="form-group">
@@ -261,6 +322,7 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
             </div>
           </div>
 
+          {/* ── Tickets ── */}
           <div className="form-section">
             <h3>Tickets</h3>
             {formData.tickets.map((ticket, index) => (
@@ -268,9 +330,8 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
                 <div className="ticket-header">
                   <span>Ticket {index + 1}</span>
                   {formData.tickets.length > 1 && (
-                    <button type="button" className="remove-ticket-btn" onClick={() => removeTicket(index)}>
-                      Remove
-                    </button>
+                    <button type="button" className="remove-ticket-btn"
+                      onClick={() => removeTicket(index)}>Remove</button>
                   )}
                 </div>
                 <div className="form-row">
@@ -301,9 +362,10 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
           </div>
 
           <div className="form-actions">
+            {uploadProgress && <span className="upload-status">{uploadProgress}</span>}
             <button type="button" className="cancel-btn" onClick={onCancel}>Cancel</button>
             <button type="submit" className="submit-btn" disabled={saving}>
-              {saving ? 'Saving...' : initialData ? 'Update Event' : 'Create Event'}
+              {saving ? (uploadProgress || 'Saving...') : initialData ? 'Update Event' : 'Create Event'}
             </button>
           </div>
         </form>
