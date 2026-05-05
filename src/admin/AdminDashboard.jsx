@@ -1,0 +1,315 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { IoAdd, IoLogOut, IoTrash, IoPencil, IoPerson } from 'react-icons/io5';
+import { fetchAdminEvents, createEvent, updateEvent, deleteEvent, logout, getAdminInfo } from '../api';
+import './Admin.css';
+
+const AdminDashboard = () => {
+  const [events, setEvents] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const admin = getAdminInfo();
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchAdminEvents();
+      setEvents(data);
+    } catch (err) {
+      setError('Failed to load events: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin');
+  };
+
+  const handleDelete = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    try {
+      await deleteEvent(eventId);
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch (err) {
+      alert('Failed to delete: ' + err.message);
+    }
+  };
+
+  const handleEdit = (event) => {
+    setEditingEvent(event);
+    setShowForm(true);
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      if (editingEvent) {
+        const updated = await updateEvent(editingEvent.id, formData);
+        setEvents(prev => prev.map(e => e.id === editingEvent.id ? updated : e));
+      } else {
+        const created = await createEvent(formData);
+        setEvents(prev => [created, ...prev]);
+      }
+      setShowForm(false);
+      setEditingEvent(null);
+    } catch (err) {
+      alert('Failed to save event: ' + err.message);
+    }
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingEvent(null);
+  };
+
+  return (
+    <div className="admin-dashboard">
+      <div className="dashboard-header">
+        <div className="header-info">
+          <h1>Admin Dashboard</h1>
+          <p className="admin-welcome">Welcome, {admin.username}</p>
+        </div>
+        <div className="header-actions">
+          <div className="admin-profile">
+            <IoPerson size={20} />
+            <span>{admin.username}</span>
+          </div>
+          <button className="logout-btn" onClick={handleLogout}>
+            <IoLogOut size={20} />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div className="dashboard-content">
+        <div className="events-section">
+          <div className="section-header">
+            <h2>My Events ({events.length})</h2>
+            <button className="add-event-btn" onClick={() => setShowForm(true)}>
+              <IoAdd size={20} />
+              Create Event
+            </button>
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+
+          {showForm && (
+            <EventForm
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              initialData={editingEvent}
+            />
+          )}
+
+          <div className="events-grid">
+            {loading ? (
+              <div className="no-events"><p>Loading events...</p></div>
+            ) : events.length === 0 ? (
+              <div className="no-events">
+                <p>No events created yet</p>
+                <button className="create-first-btn" onClick={() => setShowForm(true)}>
+                  Create Your First Event
+                </button>
+              </div>
+            ) : (
+              events.map(event => (
+                <div key={event.id} className="event-card">
+                  <div className="event-card-header">
+                    <h3>{event.name}</h3>
+                    <div className="event-actions">
+                      <button className="action-btn edit-btn" onClick={() => handleEdit(event)}>
+                        <IoPencil size={16} />
+                      </button>
+                      <button className="action-btn delete-btn" onClick={() => handleDelete(event.id)}>
+                        <IoTrash size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="event-card-body">
+                    <p className="event-venue">{event.stadium}</p>
+                    <p className="event-location">{event.city}, {event.state}</p>
+                    <p className="event-datetime">{event.day} • {event.date} • {event.time}</p>
+                    <p className="event-tickets-count">{event.tickets.length} ticket{event.tickets.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Event Form ────────────────────────────────────────────────────────────────
+
+const EventForm = ({ onSubmit, onCancel, initialData }) => {
+  const [formData, setFormData] = useState(initialData || {
+    name: '', state: '', city: '', stadium: '',
+    time: '', date: '', day: '', orderNum: '',
+    tickets: [{ section: '', row: '', seat: '' }]
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleTicketChange = (index, field, value) => {
+    const newTickets = [...formData.tickets];
+    newTickets[index][field] = value;
+    setFormData({ ...formData, tickets: newTickets });
+  };
+
+  const addTicket = () =>
+    setFormData({ ...formData, tickets: [...formData.tickets, { section: '', row: '', seat: '' }] });
+
+  const removeTicket = (index) => {
+    if (formData.tickets.length > 1) {
+      setFormData({ ...formData, tickets: formData.tickets.filter((_, i) => i !== index) });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="event-form-overlay">
+      <div className="event-form-container">
+        <div className="form-header">
+          <h2>{initialData ? 'Edit Event' : 'Create New Event'}</h2>
+          <button className="close-btn" onClick={onCancel}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="event-form">
+          <div className="form-section">
+            <h3>Event Information</h3>
+
+            <div className="form-group">
+              <label>Event Name *</label>
+              <input type="text" name="name" value={formData.name}
+                onChange={handleInputChange} required
+                placeholder="e.g., MATT RIFE: STAY GOLDEN WORLD TOUR" />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>State *</label>
+                <input type="text" name="state" value={formData.state}
+                  onChange={handleInputChange} required placeholder="e.g., NC" />
+              </div>
+              <div className="form-group">
+                <label>City *</label>
+                <input type="text" name="city" value={formData.city}
+                  onChange={handleInputChange} required placeholder="e.g., Charlotte" />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Stadium/Venue *</label>
+              <input type="text" name="stadium" value={formData.stadium}
+                onChange={handleInputChange} required placeholder="e.g., Spectrum Center" />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Day *</label>
+                <select name="day" value={formData.day} onChange={handleInputChange} required>
+                  <option value="">Select day</option>
+                  {['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Date *</label>
+                <input type="text" name="date" value={formData.date}
+                  onChange={handleInputChange} required placeholder="e.g., JUN 28, 2026" />
+              </div>
+              <div className="form-group">
+                <label>Time *</label>
+                <input type="text" name="time" value={formData.time}
+                  onChange={handleInputChange} required placeholder="e.g., 7:00 PM" />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Order Information</h3>
+            <div className="form-group">
+              <label>Order Number *</label>
+              <input type="text" name="orderNum" value={formData.orderNum}
+                onChange={handleInputChange} required placeholder="e.g., 29000565917818235" />
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3>Tickets</h3>
+            {formData.tickets.map((ticket, index) => (
+              <div key={index} className="ticket-row">
+                <div className="ticket-header">
+                  <span>Ticket {index + 1}</span>
+                  {formData.tickets.length > 1 && (
+                    <button type="button" className="remove-ticket-btn" onClick={() => removeTicket(index)}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Section *</label>
+                    <input type="text" value={ticket.section}
+                      onChange={(e) => handleTicketChange(index, 'section', e.target.value)}
+                      required placeholder="e.g., 105" />
+                  </div>
+                  <div className="form-group">
+                    <label>Row *</label>
+                    <input type="text" value={ticket.row}
+                      onChange={(e) => handleTicketChange(index, 'row', e.target.value)}
+                      required placeholder="e.g., B" />
+                  </div>
+                  <div className="form-group">
+                    <label>Seat *</label>
+                    <input type="text" value={ticket.seat}
+                      onChange={(e) => handleTicketChange(index, 'seat', e.target.value)}
+                      required placeholder="e.g., 13" />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button type="button" className="add-ticket-btn" onClick={addTicket}>
+              + Add Another Ticket
+            </button>
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="cancel-btn" onClick={onCancel}>Cancel</button>
+            <button type="submit" className="submit-btn" disabled={saving}>
+              {saving ? 'Saving...' : initialData ? 'Update Event' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

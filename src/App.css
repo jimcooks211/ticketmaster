@@ -1,0 +1,779 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.BottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  line-height: 0;
+}
+
+.nav-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  vertical-align: bottom;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: high-quality;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+/* Page transitions */
+.page-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: 80px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: opacity 0.2s ease;
+}
+.homepage img {
+  height: 100%;
+  width: 100%;
+}
+.homepage img:not(:nth-child(1)) {
+  margin-top: -5px;
+}
+.event img {
+  width: 100%;
+}
+.event .event-header-words {
+  display: flex;
+  background: #131313;
+  align-items: center;
+  justify-content: space-around;
+  margin-top: -5px;
+  height: 2.5rem;
+  padding: 20px 0 25px 0;
+  position: relative;
+}
+
+/* sliding underline bar – animates left↔right */
+.event .event-header-words::after {
+  position: absolute;
+  content: "";
+  height: 3px;
+  width: 50%;
+  background: white;
+  left: 0;
+  bottom: 0;
+  transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.event .event-header-words[data-activeview="past"]::after {
+  left: 50%;
+}
+
+/* active tab = white + bold, inactive = grey + light */
+.event .event-header-words p {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12.5px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease, font-weight 0.2s ease;
+  user-select: none;
+}
+.event .event-header-words p.tab-active {
+  color: #ffffff;
+  font-weight: 600;
+  -webkit-text-stroke: 0.03em;
+}
+.event .event-header-words p.tab-inactive {
+  color: rgb(150, 150, 150);
+  font-weight: 300;
+  -webkit-text-stroke: none;
+}
+
+.tickets-cards .timedetails {
+  background-color: #131313;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  width: fit-content;
+  padding: 12px 15px 6px;
+}
+.tickets-cards .eventdetails {
+  background-color: #131313;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  padding: 12px 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tickets-cards .eventdetails p:nth-child(1) {
+  font-size: 27px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+.tickets-cards .eventdetails hr {
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.82);
+  width: 50%;
+  border: none;
+  border-radius: 1px;
+  margin: 5px 0;
+}
+.tickets-cards .eventdetails p:nth-child(3) {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.01em;
+} 
+/* each card wrapper */
+.tickets-cards > div {
+  margin-bottom: 16px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-items {
+  margin: 0;
+  background: #131313;
+}
+.tickets-cards img {
+  width: 100%;
+  aspect-ratio: 1 / 0.5;
+  object-fit: cover;
+  display: block;
+}
+.tickets-cards {
+  width: 92vw;
+  margin: 0 auto;
+}
+.tickets-cards {
+  margin-top: 15px;
+}
+.ticketpopup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #fff;
+  width: 100%;
+  height: 100vh;
+  z-index: 999999999;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 100px;
+}
+.arrow-back-icon {
+  background: #131313cd;
+  color: white;
+  width: fit-content;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+}
+.help-event-btn {
+  background: #131313cd;
+  color: white;
+  width: fit-content;
+  padding: 6px 13px;
+  border-radius: 80px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+.ticketpopup .ticketpopup-class > div:nth-child(1) {
+  display: flex;
+  justify-content: space-between;
+}
+.ticketpopup-class {
+  width: 92%;
+  margin: 20px auto 0;
+}
+
+.event-detail-content {
+  background: #000;
+  min-height: 100%;
+  padding-bottom: 100px;
+}
+
+.event-hero-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.event-info-section {
+  padding: 20px;
+  background: #000;
+}
+
+.event-title {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  line-height: 1.3;
+}
+
+.event-divider {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 15px 0;
+}
+
+.event-venue {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.event-datetime {
+  padding: 15px 20px;
+  background: #1a1a1a;
+  margin: 10px 0;
+}
+
+.datetime-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.datetime-day {
+  font-weight: bold;
+  color: #fff;
+}
+
+.datetime-separator {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.seat-selection-section {
+  padding: 20px;
+  background: #1a1a1a;
+  margin: 10px 0;
+}
+
+.section-title {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.seat-map {
+  background: #2a2a2a;
+  padding: 30px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.stage {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  border-radius: 5px;
+  letter-spacing: 3px;
+}
+
+.seating-area {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+}
+
+.seat {
+  aspect-ratio: 1;
+  background: #3a3a3a;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.seat:hover {
+  background: #4a4a4a;
+}
+
+.seat.selected {
+  background: #667eea;
+  color: white;
+  border-color: #764ba2;
+}
+
+.seat-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.legend-color.available {
+  background: #3a3a3a;
+}
+
+.legend-color.selected {
+  background: #667eea;
+}
+
+.ticket-summary {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1a1a1a;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.summary-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.summary-value {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.get-tickets-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.2s ease;
+}
+
+.get-tickets-btn:hover {
+  transform: scale(1.02);
+}
+
+/* ═══════════════════════════════════════════
+   TICKET POPUP  –  tp-* classes
+   Exact replica of Ticketmaster event screen
+═══════════════════════════════════════════ */
+
+/* ── Hero image ── */
+.tp-hero-wrapper {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+.tp-hero-img {
+  width: 100%;
+  height: 290px;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.tp-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 14px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+.tp-back-btn {
+  background: rgba(19, 19, 19, 0.78);
+  color: #fff;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tp-help-btn {
+  background: rgba(19, 19, 19, 0.78);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-weight: 400;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Dark event info section ── */
+.tp-event-info {
+  background: #131313;
+  padding: 10px 15px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tp-datetime {
+  color: #fff;
+  font-size: 11.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: 0.03em;
+  width: fit-content;
+  align-self: flex-start;
+}
+.tp-event-name {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+.tp-venue-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3px;
+}
+.tp-venue {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+.tp-qr-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.tp-ticket-x {
+  color: #fff;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-weight: 400;
+}
+
+/* ── Blue "View Tickets" button ── */
+.tp-view-tickets-btn {
+  width: 100%;
+  background: #026CDF;
+  color: #fff;
+  border: none;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Tabs ── */
+.tp-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #e2e2e2;
+}
+.tp-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 13px 0 10px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-weight: 400;
+  color: #888;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+  margin-bottom: -1px;
+}
+.tp-tab-active {
+  color: #000;
+  font-weight: 700;
+  border-bottom: 3px solid #000;
+}
+
+/* ── Scrollable content area ── */
+.tp-content {
+  background: #fff;
+  padding: 0 16px;
+}
+
+/* Order row */
+.tp-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 12px;
+}
+.tp-order-num {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  color: #000;
+  letter-spacing: -0.01em;
+}
+.tp-order-count {
+  font-size: 11.5px;
+  color: #888;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  margin-top: 3px;
+}
+
+/* ── Ticket cards ── */
+.tp-ticket-card {
+  border: 1px solid #d0d0d0;
+  border-radius: 0;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.tp-ticket-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: 0.04em;
+  padding: 14px 16px;
+  background: #e8e8e8;
+  border-bottom: 1px solid #c8c8c8;
+}
+.tp-ticket-details {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 16px 22px;
+  background: #f0f0f0;
+}
+.tp-ticket-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tp-field-left  { text-align: left; }
+.tp-field-center { text-align: center; }
+.tp-field-right  { text-align: right; }
+.tp-field-label {
+  font-size: 11px;
+  color: #999;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: 0.06em;
+  font-weight: 400;
+}
+.tp-field-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* ── Bottom Transfer / Sell floating bar ── */
+.tp-bottom-bar {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000000000;
+  pointer-events: none;
+}
+.tp-bottom-actions {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 50px;
+  padding: 11px 36px;
+  gap: 36px;
+  box-shadow: 0 3px 22px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  pointer-events: all;
+}
+.tp-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #026CDF;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.tp-action-btn span {
+  color: #111;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN EVENTS SECTION STYLES
+═══════════════════════════════════════════ */
+
+.admin-events-section {
+  padding: 20px;
+  background: #f5f5f5;
+  margin-top: 20px;
+}
+
+.admin-events-title {
+  color: #333;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.admin-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.admin-event-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.admin-event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.admin-event-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-event-info {
+  padding: 16px;
+}
+
+.admin-event-name {
+  color: #333;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.admin-event-venue {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.admin-event-location {
+  color: #888;
+  font-size: 13px;
+  margin: 0 0 8px 0;
+}
+
+.admin-event-datetime {
+  color: #333;
+  font-size: 13px;
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.admin-event-tickets {
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+  background: #f0f4ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.admin-event-created-by {
+  color: #999;
+  font-size: 11px;
+  margin: 8px 0 0 0;
+  font-style: italic;
+}
