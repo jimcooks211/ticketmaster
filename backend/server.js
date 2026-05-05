@@ -2,26 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Datastore = require('@seald-io/nedb');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'tm-secret-change-in-prod';
+const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// ── Databases (files auto-created in /backend/data/) ─────────────────────────
-const dataDir = path.join(__dirname, 'data');
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set.');
+  process.exit(1);
+}
 
-const admins = new Datastore({
-  filename: path.join(dataDir, 'admins.db'),
-  autoload: true
-});
-const events = new Datastore({
-  filename: path.join(dataDir, 'events.db'),
-  autoload: true
-});
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('FATAL: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set.');
+  process.exit(1);
+}
 
-admins.ensureIndex({ fieldName: 'username', unique: true });
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
@@ -39,6 +39,23 @@ const auth = (req, res, next) => {
   }
 };
 
+// ── Format helper ─────────────────────────────────────────────────────────────
+const formatEvent = (ev) => ({
+  id: ev.id,
+  name: ev.name,
+  state: ev.state,
+  city: ev.city,
+  stadium: ev.stadium,
+  time: ev.time,
+  date: ev.date,
+  day: ev.day,
+  orderNum: ev.order_num,
+  tickets: ev.tickets || [],
+  createdAt: ev.created_at,
+  admin_id: ev.admin_id,
+  createdBy: ev.admins?.username || null
+});
+
 // ── Auth Routes ───────────────────────────────────────────────────────────────
 
 // POST /api/admin/register
@@ -51,108 +68,149 @@ app.post('/api/admin/register', async (req, res) => {
   if (password.length < 6)
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
 
+  // Check if username already taken
+  const { data: existing } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (existing) return res.status(409).json({ error: 'Username already exists' });
+
   const hash = bcrypt.hashSync(password, 10);
-  try {
-    const doc = await admins.insertAsync({ username, password: hash, createdAt: new Date() });
-    res.json({ success: true, id: doc._id });
-  } catch (err) {
-    if (err.errorType === 'uniqueViolated')
-      return res.status(409).json({ error: 'Username already exists' });
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+
+  const { data, error } = await supabase
+    .from('admins')
+    .insert([{ username, password: hash }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Register error:', error);
+    return res.status(500).json({ error: 'Server error during registration' });
   }
+
+  res.json({ success: true, id: data.id });
 });
 
 // POST /api/admin/login
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
-  const admin = await admins.findOneAsync({ username });
-  if (!admin || !bcrypt.compareSync(password, admin.password))
+
+  const { data: admin, error } = await supabase
+    .from('admins')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error || !admin || !bcrypt.compareSync(password, admin.password))
     return res.status(401).json({ error: 'Invalid username or password' });
 
   const token = jwt.sign(
-    { id: admin._id, username: admin.username },
+    { id: admin.id, username: admin.username },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
-  res.json({ token, id: admin._id, username: admin.username });
-});
 
-// ── Event helpers ─────────────────────────────────────────────────────────────
-const formatEvent = (ev, adminUsername = null) => ({
-  id: ev._id,
-  name: ev.name,
-  state: ev.state,
-  city: ev.city,
-  stadium: ev.stadium,
-  time: ev.time,
-  date: ev.date,
-  day: ev.day,
-  orderNum: ev.orderNum,
-  tickets: ev.tickets || [],
-  createdAt: ev.createdAt,
-  createdBy: adminUsername || ev.adminUsername || null
+  res.json({ token, id: admin.id, username: admin.username });
 });
 
 // ── Admin Event Routes ────────────────────────────────────────────────────────
 
 // GET /api/admin/events
 app.get('/api/admin/events', auth, async (req, res) => {
-  const docs = await events.findAsync({ adminId: req.admin.id }).sort({ createdAt: -1 });
-  res.json(docs.map(e => formatEvent(e)));
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('admin_id', req.admin.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data.map(formatEvent));
 });
 
 // POST /api/admin/events
 app.post('/api/admin/events', auth, async (req, res) => {
   const { name, state, city, stadium, time, date, day, orderNum, tickets = [] } = req.body || {};
-  try {
-    const doc = await events.insertAsync({
-      adminId: req.admin.id,
-      adminUsername: req.admin.username,
-      name, state, city, stadium, time, date, day, orderNum, tickets,
-      createdAt: new Date()
-    });
-    res.status(201).json(formatEvent(doc));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to create event' });
+
+  const { data, error } = await supabase
+    .from('events')
+    .insert([{
+      admin_id: req.admin.id,
+      name, state, city, stadium, time, date, day,
+      order_num: orderNum,
+      tickets
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Create event error:', error);
+    return res.status(500).json({ error: 'Failed to create event' });
   }
+
+  res.status(201).json(formatEvent(data));
 });
 
 // PUT /api/admin/events/:id
 app.put('/api/admin/events/:id', auth, async (req, res) => {
-  const { id } = req.params;
   const { name, state, city, stadium, time, date, day, orderNum, tickets = [] } = req.body || {};
 
-  const existing = await events.findOneAsync({ _id: id, adminId: req.admin.id });
+  // Confirm event belongs to this admin
+  const { data: existing } = await supabase
+    .from('events')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('admin_id', req.admin.id)
+    .maybeSingle();
+
   if (!existing) return res.status(404).json({ error: 'Event not found' });
 
-  await events.updateAsync(
-    { _id: id },
-    { $set: { name, state, city, stadium, time, date, day, orderNum, tickets } }
-  );
-  const updated = await events.findOneAsync({ _id: id });
-  res.json(formatEvent(updated));
+  const { data, error } = await supabase
+    .from('events')
+    .update({ name, state, city, stadium, time, date, day, order_num: orderNum, tickets })
+    .eq('id', req.params.id)
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(formatEvent(data));
 });
 
 // DELETE /api/admin/events/:id
 app.delete('/api/admin/events/:id', auth, async (req, res) => {
-  const existing = await events.findOneAsync({ _id: req.params.id, adminId: req.admin.id });
+  const { data: existing } = await supabase
+    .from('events')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('admin_id', req.admin.id)
+    .maybeSingle();
+
   if (!existing) return res.status(404).json({ error: 'Event not found' });
 
-  await events.removeAsync({ _id: req.params.id });
+  const { error } = await supabase
+    .from('events')
+    .delete()
+    .eq('id', req.params.id);
+
+  if (error) return res.status(500).json({ error: error.message });
   res.json({ success: true });
 });
 
 // ── Public Route ──────────────────────────────────────────────────────────────
 
-// GET /api/events — all events for Event.jsx
+// GET /api/events — all events for public-facing pages
 app.get('/api/events', async (req, res) => {
-  const docs = await events.findAsync({}).sort({ createdAt: -1 });
-  res.json(docs.map(e => formatEvent(e, e.adminUsername)));
+  const { data, error } = await supabase
+    .from('events')
+    .select('*, admins(username)')
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data.map(formatEvent));
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`Ticketmaster backend running at http://localhost:${PORT}`);
+  console.log(`Ticketmaster backend running on port ${PORT}`);
 });
