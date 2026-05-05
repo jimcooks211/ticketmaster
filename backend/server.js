@@ -155,4 +155,7 @@ app.get('/api/events', async (req, res) => {
   res.json(data.map(formatEvent));
 });
 
-app.listen(PORT, () => console.log(`Ticketmaster backend running on port ${PORT}`));
+// Health check
+app.get('/', (req, res) => res.json({ status: 'ok' }));
+
+app.listen(PORT, '0.0.0.0', () => console.log(`Ticketmaster backend running on port ${PORT}`));
