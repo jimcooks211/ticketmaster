@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoAdd, IoLogOut, IoTrash, IoPencil, IoPerson, IoImage } from 'react-icons/io5';
-import { fetchAdminEvents, createEvent, updateEvent, deleteEvent, logout, getAdminInfo } from '../api';
-import { uploadEventImage } from '../supabase';
+import { fetchAdminEvents, createEvent, updateEvent, deleteEvent, logout, getAdminInfo, uploadImage } from '../api';
 import './Admin.css';
 
 const AdminDashboard = () => {
@@ -205,7 +204,7 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
 
       if (imageFile) {
         setUploadProgress('Uploading image...');
-        imageUrl = await uploadEventImage(imageFile);
+        imageUrl = await uploadImage(imageFile);
         setUploadProgress('');
       }
 

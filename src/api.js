@@ -83,6 +83,22 @@ export const deleteEvent = async (id) => {
   return await request(`/admin/events/${id}`, { method: 'DELETE' });
 };
 
+// ── Image Upload ──────────────────────────────────────────────────────────────
+
+export const uploadImage = async (file) => {
+  const { token } = getAdminInfo();
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`${API_BASE}/admin/upload-image`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Image upload failed');
+  return data.url;
+};
+
 // ── Public Events ─────────────────────────────────────────────────────────────
 
 export const fetchAllEvents = async () => {

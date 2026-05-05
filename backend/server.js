@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -18,12 +19,38 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 app.use(cors());
 app.use(express.json());
 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
 const auth = (req, res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token provided' });
   try { req.admin = jwt.verify(header.slice(7), JWT_SECRET); next(); }
   catch { res.status(401).json({ error: 'Invalid or expired token' }); }
 };
+
+// Auto-create storage bucket if it doesn't exist
+const ensureBucket = async () => {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets?.some(b => b.name === 'event-images');
+  if (!exists) {
+    await supabase.storage.createBucket('event-images', { public: true });
+    console.log('Created event-images bucket');
+  }
+};
+ensureBucket().catch(console.error);
+
+// POST /api/admin/upload-image
+app.post('/api/admin/upload-image', auth, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+  const ext = req.file.originalname.split('.').pop();
+  const fileName = `${req.admin.id}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('event-images')
+    .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (error) { console.error('Upload error:', error); return res.status(500).json({ error: 'Image upload failed: ' + error.message }); }
+  const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(fileName);
+  res.json({ url: publicUrl });
+});
 
 const formatEvent = (ev) => ({
   id: ev.id,
