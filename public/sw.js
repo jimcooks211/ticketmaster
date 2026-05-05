@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ticketmaster-v5';
+const CACHE_NAME = 'ticketmaster-v6';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -60,19 +60,17 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Skip non-GET and API requests — never cache those
+  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    return;
+  }
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(response => {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-          return response;
-        });
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+        return response;
       })
+      .catch(() => caches.match(event.request))
   );
 });
