@@ -34,17 +34,15 @@ const App = () => {
           }
         />
 
-        {/* Main app — also requires login */}
+        {/* Main app — public access, no login required */}
         <Route path="*" element={
-          <ProtectedRoute>
-            <>
-              <div className="page-container">
-                <ActivePage />
-              </div>
-              <BottomNav activeIndex={activePage} setActiveIndex={setActivePage} />
-              <div id="popup-container"></div>
-            </>
-          </ProtectedRoute>
+          <>
+            <div className="page-container">
+              <ActivePage />
+            </div>
+            <BottomNav activeIndex={activePage} setActiveIndex={setActivePage} />
+            <div id="popup-container"></div>
+          </>
         } />
       </Routes>
     </Router>

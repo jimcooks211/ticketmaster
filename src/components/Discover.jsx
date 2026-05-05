@@ -10,29 +10,28 @@ import img9 from '../imgs/home_image9.PNG'
 import img10 from '../imgs/home_image10.PNG'
 import concertIMG1 from '../imgs/matt_rife.webp'
 import { useState, useEffect } from 'react'
+import { fetchAllEvents } from '../api'
 import '../App.css'
 
 const Homepage = () => {
   const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Load events from all admins on mount
+  // Load events from Supabase on mount
   useEffect(() => {
-    const adminUsers = JSON.parse(localStorage.getItem('adminUsers') || '[]');
-
-    // Aggregate events from all admins
-    const allEvents = adminUsers.reduce((acc, admin) => {
-      if (admin.events && admin.events.length > 0) {
-        const eventsWithImages = admin.events.map(event => ({
-          ...event,
-          IMG: event.IMG || concertIMG1,
-          createdBy: admin.username
-        }));
-        return [...acc, ...eventsWithImages];
+    const loadEvents = async () => {
+      try {
+        const data = await fetchAllEvents();
+        setEvents(data);
+      } catch (error) {
+        console.error('Error loading events:', error);
+        // If backend not available, show no events
+      } finally {
+        setLoading(false);
       }
-      return acc;
-    }, []);
+    };
 
-    setEvents(allEvents);
+    loadEvents();
   }, []);
 
   return (
@@ -49,13 +48,13 @@ const Homepage = () => {
       <img src={img10} alt="" />
 
       {/* Display admin-created events */}
-      {events.length > 0 && (
+      {!loading && events.length > 0 && (
         <div className="admin-events-section">
           <h2 className="admin-events-title">Available Events</h2>
           <div className="admin-events-grid">
             {events.map((event, index) => (
               <div key={event.id || index} className="admin-event-card">
-                <img src={event.IMG} alt={event.name} className="admin-event-image" />
+                <img src={event.IMG || concertIMG1} alt={event.name} className="admin-event-image" />
                 <div className="admin-event-info">
                   <h3 className="admin-event-name">{event.name}</h3>
                   <p className="admin-event-venue">{event.stadium}</p>
@@ -63,7 +62,7 @@ const Homepage = () => {
                   <p className="admin-event-datetime">
                     {event.day} • {event.date} • {event.time}
                   </p>
-                  <p className="admin-event-tickets">{event.tickets.length} tickets available</p>
+                  <p className="admin-event-tickets">{event.tickets?.length || 0} tickets available</p>
                   {event.createdBy && (
                     <p className="admin-event-created-by">Created by: {event.createdBy}</p>
                   )}
