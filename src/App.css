@@ -777,3 +777,196 @@ html, body, #root {
   margin: 8px 0 0 0;
   font-style: italic;
 }
+
+/* ═══════════════════════════════════════════
+   ACCOUNT PAGE
+═══════════════════════════════════════════ */
+
+.account-page {
+  min-height: 100%;
+  background: #f2f2f7;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.account-header {
+  background: #fff;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.account-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: -0.02em;
+}
+
+.account-section {
+  padding: 24px 16px 12px;
+}
+
+.account-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.account-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.account-card-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-card-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  gap: 14px;
+}
+
+.account-admin-info {
+  background: #fff;
+}
+
+.account-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #eef0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.account-avatar-lg {
+  width: 64px;
+  height: 64px;
+  background: #f0f0f0;
+  margin-bottom: 4px;
+}
+
+.account-admin-text {
+  flex: 1;
+}
+
+.account-admin-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+}
+
+.account-admin-role {
+  font-size: 13px;
+  color: #8e8e93;
+  margin: 2px 0 0;
+}
+
+.account-action-row {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.account-action-row:active {
+  background: #f5f5f5;
+}
+
+.account-action-label {
+  flex: 1;
+  font-size: 15px;
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.account-action-danger {
+  color: #e53935;
+}
+
+.account-logout-row {
+}
+
+.account-divider {
+  height: 1px;
+  background: #e5e5ea;
+  margin-left: 50px;
+}
+
+/* Signed-out card */
+.account-signin-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px 28px;
+  gap: 8px;
+  text-align: center;
+}
+
+.account-signin-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+  margin: 4px 0 0;
+}
+
+.account-signin-sub {
+  font-size: 13px;
+  color: #8e8e93;
+  margin: 0 0 12px;
+  line-height: 1.5;
+  max-width: 240px;
+}
+
+.account-signin-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.account-signin-btn:active {
+  opacity: 0.85;
+}
+
+.account-register-btn {
+  width: 100%;
+  background: none;
+  color: #667eea;
+  border: 1.5px solid #667eea;
+  border-radius: 10px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 4px;
+}
+
+.account-register-btn:active {
+  background: #f5f3ff;
+}
