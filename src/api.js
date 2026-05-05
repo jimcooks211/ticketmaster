@@ -105,6 +105,6 @@ export const fetchAllEvents = async () => {
   const data = await request('/events');
   return data.map(event => ({
     ...event,
-    IMG: event.IMG || '/matt_rife.webp'
+    IMG: event.image_url || null
   }));
 };

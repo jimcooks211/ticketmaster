@@ -116,9 +116,9 @@ app.get('/api/admin/events', auth, async (req, res) => {
 
 // POST /api/admin/events
 app.post('/api/admin/events', auth, async (req, res) => {
-  const { name, state, city, stadium, time, date, day, orderNum, tickets = [], image_url = null } = req.body || {};
+  const { name, state, city, stadium, time, date, day, orderNum, tickets = [], image_url } = req.body || {};
   const { data, error } = await supabase.from('events')
-    .insert([{ admin_id: req.admin.id, name, state, city, stadium, time, date, day, order_num: orderNum, tickets, image_url }])
+    .insert([{ admin_id: req.admin.id, name, state, city, stadium, time, date, day, order_num: orderNum, tickets, image_url: image_url || null }])
     .select().single();
   if (error) { console.error('Create event error:', error); return res.status(500).json({ error: 'Failed to create event' }); }
   res.status(201).json(formatEvent(data));

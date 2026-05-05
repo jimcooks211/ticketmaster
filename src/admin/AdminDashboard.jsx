@@ -208,7 +208,7 @@ const EventForm = ({ onSubmit, onCancel, initialData }) => {
         setUploadProgress('');
       }
 
-      await onSubmit({ ...formData, image_url: imageUrl });
+      await onSubmit({ ...formData, image_url: imageUrl || null });
     } catch (err) {
       alert('Failed to save: ' + err.message);
     } finally {
