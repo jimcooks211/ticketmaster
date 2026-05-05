@@ -1,7 +1,7 @@
 // All admin and event operations go through the Railway backend.
 // The backend holds the Supabase service role key securely.
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ticketmaster-production-4508.up.railway.app/api';
 
 // ── LocalStorage helpers ──────────────────────────────────────────────────────
 
@@ -26,7 +26,13 @@ const request = async (path, options = {}) => {
     ...options
   });
 
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Server error (${res.status}) — is the Railway backend running? Response: ${text.slice(0, 100)}`);
+  }
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 };
