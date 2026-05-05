@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ticketmaster-v4';
+const CACHE_NAME = 'ticketmaster-v5';
 const urlsToCache = [
   '/',
   '/index.html',
