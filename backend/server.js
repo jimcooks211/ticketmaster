@@ -158,4 +158,8 @@ app.get('/api/events', async (req, res) => {
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Ticketmaster backend running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Ticketmaster backend running on port ${PORT}`);
+  console.log(`ENV PORT value: ${process.env.PORT}`);
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+});
