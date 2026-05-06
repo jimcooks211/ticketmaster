@@ -9,6 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET;
 
+console.log(`=== STARTUP DEBUG ===`);
+console.log(`process.env.PORT = ${process.env.PORT}`);
+console.log(`Using PORT = ${PORT}`);
+console.log(`JWT_SECRET set: ${!!JWT_SECRET}`);
+console.log(`SUPABASE_URL set: ${!!process.env.SUPABASE_URL}`);
+console.log(`SUPABASE_SERVICE_ROLE_KEY set: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+console.log(`====================`);
+
 if (!JWT_SECRET) { console.error('FATAL: JWT_SECRET not set.'); process.exit(1); }
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error('FATAL: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set.'); process.exit(1);
@@ -31,7 +39,6 @@ const auth = (req, res, next) => {
   catch { res.status(401).json({ error: 'Invalid or expired token' }); }
 };
 
-// Auto-create storage bucket if it doesn't exist
 const ensureBucket = async () => {
   const { data: buckets } = await supabase.storage.listBuckets();
   const exists = buckets?.some(b => b.name === 'event-images');
@@ -42,27 +49,19 @@ const ensureBucket = async () => {
 };
 ensureBucket().catch(console.error);
 
-// POST /api/admin/upload-image
 app.post('/api/admin/upload-image', auth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided' });
-
-  // Derive extension from mimetype — reliable even if filename is missing/wrong
   const mimeToExt = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/heic': 'heic' };
   const ext = mimeToExt[req.file.mimetype] || 'jpg';
-
-  // Flat path — no subdirectory, no special chars
   const adminId = req.admin.id.replace(/-/g, '');
   const fileName = `${adminId}_${Date.now()}.${ext}`;
-
   const { error } = await supabase.storage
     .from('event-images')
     .upload(fileName, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
-
   if (error) {
     console.error('Upload error:', error);
     return res.status(500).json({ error: 'Image upload failed: ' + error.message });
   }
-
   const { data: { publicUrl } } = supabase.storage.from('event-images').getPublicUrl(fileName);
   res.json({ url: publicUrl });
 });
@@ -84,23 +83,19 @@ const formatEvent = (ev) => ({
   createdBy: ev.admins?.username || null
 });
 
-// POST /api/admin/register
 app.post('/api/admin/register', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
   if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-
   const { data: existing } = await supabase.from('admins').select('id').eq('username', username).maybeSingle();
   if (existing) return res.status(409).json({ error: 'Username already exists' });
-
   const hash = bcrypt.hashSync(password, 10);
   const { data, error } = await supabase.from('admins').insert([{ username, password: hash }]).select().single();
   if (error) { console.error('Register error:', error); return res.status(500).json({ error: 'Server error during registration' }); }
   res.json({ success: true, id: data.id });
 });
 
-// POST /api/admin/login
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
   const { data: admin } = await supabase.from('admins').select('*').eq('username', username).maybeSingle();
@@ -110,14 +105,12 @@ app.post('/api/admin/login', async (req, res) => {
   res.json({ token, id: admin.id, username: admin.username });
 });
 
-// GET /api/admin/events
 app.get('/api/admin/events', auth, async (req, res) => {
   const { data, error } = await supabase.from('events').select('*').eq('admin_id', req.admin.id).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data.map(formatEvent));
 });
 
-// POST /api/admin/events
 app.post('/api/admin/events', auth, async (req, res) => {
   const { name, state, city, stadium, time, date, day, orderNum, tickets = [], image_url } = req.body || {};
   const { data, error } = await supabase.from('events')
@@ -127,7 +120,6 @@ app.post('/api/admin/events', auth, async (req, res) => {
   res.status(201).json(formatEvent(data));
 });
 
-// PUT /api/admin/events/:id
 app.put('/api/admin/events/:id', auth, async (req, res) => {
   const { name, state, city, stadium, time, date, day, orderNum, tickets = [], image_url } = req.body || {};
   const { data: existing } = await supabase.from('events').select('id').eq('id', req.params.id).eq('admin_id', req.admin.id).maybeSingle();
@@ -139,7 +131,6 @@ app.put('/api/admin/events/:id', auth, async (req, res) => {
   res.json(formatEvent(data));
 });
 
-// DELETE /api/admin/events/:id
 app.delete('/api/admin/events/:id', auth, async (req, res) => {
   const { data: existing } = await supabase.from('events').select('id').eq('id', req.params.id).eq('admin_id', req.admin.id).maybeSingle();
   if (!existing) return res.status(404).json({ error: 'Event not found' });
@@ -148,18 +139,15 @@ app.delete('/api/admin/events/:id', auth, async (req, res) => {
   res.json({ success: true });
 });
 
-// GET /api/events — public
 app.get('/api/events', async (req, res) => {
   const { data, error } = await supabase.from('events').select('*, admins(username)').order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data.map(formatEvent));
 });
 
-// Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ticketmaster backend running on port ${PORT}`);
   console.log(`ENV PORT value: ${process.env.PORT}`);
-  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
 });
