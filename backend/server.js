@@ -6,7 +6,7 @@ const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 console.log(`=== STARTUP DEBUG ===`);
@@ -25,7 +25,7 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 app.use(cors({
-  origin: ['https://ticketmaster-twlj.vercel.app', 'https://ticketmaster-tau-tawny.vercel.app', 'http://localhost:5173'],
+  origin: ['https://ticketmaster-twlj.vercel.app', 'https://ticketmaster-tau-tawny.vercel.app', 'http://localhost:5173', 'https://jimcooks211.github.io'],
   credentials: true
 }));
 app.use(express.json());
@@ -146,8 +146,26 @@ app.get('/api/events', async (req, res) => {
 });
 
 app.get('/', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ticketmaster backend running on port ${PORT}`);
   console.log(`ENV PORT value: ${process.env.PORT}`);
+});
+
+// Keep process alive — prevent Railway from killing idle Node process
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
 });
