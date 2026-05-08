@@ -18,7 +18,7 @@ const App = () => {
   const ActivePage = pages[activePage];
 
   return (
-    <Router>
+  <Router basename="/ticketmaster">
       <Routes>
         {/* Admin auth routes — always accessible */}
         <Route path="/admin" element={<AdminLogin />} />

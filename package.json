@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "deploy": "vite build && npx gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview",
     "generate-images": "node generate-images.js",
