@@ -114,3 +114,17 @@ export const fetchAllEvents = async () => {
     IMG: event.image_url || null
   }));
 };
+
+export const changePassword = async (currentPassword, newPassword) => {
+  return await request('/admin/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+};
+
+export const deleteAccount = async (password) => {
+  return await request('/admin/account', {
+    method: 'DELETE',
+    body: JSON.stringify({ password })
+  });
+};

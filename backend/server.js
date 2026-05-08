@@ -105,6 +105,34 @@ app.post('/api/admin/login', async (req, res) => {
   res.json({ token, id: admin.id, username: admin.username });
 });
 
+
+// -- Change password (authenticated) ------------------------------------------
+app.post('/api/admin/change-password', auth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  const { data: admin } = await supabase.from('admins').select('*').eq('id', req.admin.id).maybeSingle();
+  if (!admin || !bcrypt.compareSync(currentPassword, admin.password))
+    return res.status(401).json({ error: 'Current password is incorrect' });
+  const hash = bcrypt.hashSync(newPassword, 10);
+  const { error } = await supabase.from('admins').update({ password: hash }).eq('id', req.admin.id);
+  if (error) return res.status(500).json({ error: 'Failed to update password' });
+  res.json({ success: true, message: 'Password updated successfully' });
+});
+
+// -- Delete own account (authenticated) ---------------------------------------
+app.delete('/api/admin/account', auth, async (req, res) => {
+  const { password } = req.body || {};
+  if (!password) return res.status(400).json({ error: 'Password required to delete account' });
+  const { data: admin } = await supabase.from('admins').select('*').eq('id', req.admin.id).maybeSingle();
+  if (!admin || !bcrypt.compareSync(password, admin.password))
+    return res.status(401).json({ error: 'Incorrect password' });
+  // Delete admin's events first
+  await supabase.from('events').delete().eq('admin_id', req.admin.id);
+  const { error } = await supabase.from('admins').delete().eq('id', req.admin.id);
+  if (error) return res.status(500).json({ error: 'Failed to delete account' });
+  res.json({ success: true, message: 'Account deleted' });
+});
 app.get('/api/admin/events', auth, async (req, res) => {
   const { data, error } = await supabase.from('events').select('*').eq('admin_id', req.admin.id).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
